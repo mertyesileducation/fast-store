@@ -2,27 +2,21 @@ package com.kisisel.magaza;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URL;
-
 public class SettingsActivity extends Activity {
-    private EditText sources;
     private TextView permStatus;
     private Button permBtn;
 
@@ -38,7 +32,6 @@ public class SettingsActivity extends Activity {
     private int dp(float v) { return Ui.dp(this, v); }
 
     private View build() {
-        final SharedPreferences p = CatalogRepo.prefs(this);
         ScrollView sv = new ScrollView(this);
         sv.setBackgroundColor(Ui.bg(this));
         LinearLayout col = new LinearLayout(this);
@@ -46,33 +39,27 @@ public class SettingsActivity extends Activity {
         col.setPadding(dp(20), dp(16), dp(20), dp(32));
         sv.addView(col);
 
-        // Katalog kaynaklari
-        LinearLayout c1 = card(col, "Katalog adresleri");
-        c1.addView(Ui.text(this, "Her satıra bir katalog.json adresi yaz. Birden fazla katalog birleştirilir.",
-                13, Ui.sub(this), false));
-        sources = new EditText(this);
-        sources.setText(p.getString(CatalogRepo.KEY_SOURCES, ""));
-        sources.setHint("https://ornek.com/magaza/katalog.json");
-        sources.setTextSize(14);
-        sources.setTextColor(Ui.text(this));
-        sources.setHintTextColor(Ui.sub(this));
-        sources.setMinLines(3);
-        sources.setGravity(Gravity.TOP);
-        sources.setInputType(android.text.InputType.TYPE_CLASS_TEXT
-                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
-                | android.text.InputType.TYPE_TEXT_VARIATION_URI);
-        sources.setBackground(Ui.round(Ui.bg(this), dp(10)));
-        sources.setPadding(dp(12), dp(10), dp(12), dp(10));
+        // Katalog (sabit)
+        LinearLayout c1 = card(col, "Katalog");
+        c1.addView(Ui.text(this, "Uygulamalar bu katalogdan gelir:", 13, Ui.sub(this), false));
+        TextView url = Ui.text(this, CatalogRepo.CATALOG_URL, 13, Ui.text(this), false);
+        url.setTextIsSelectable(true);
+        url.setBackground(Ui.round(Ui.bg(this), dp(10)));
+        url.setPadding(dp(12), dp(10), dp(12), dp(10));
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-1, -2);
         slp.topMargin = dp(10);
-        c1.addView(sources, slp);
-        Button save = Ui.button(this, "Kaydet ve yenile", Ui.PRIMARY, true);
-        save.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { saveSources(); }
+        c1.addView(url, slp);
+        Button refresh = Ui.button(this, "Kataloğu yenile", Ui.PRIMARY, true);
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                CatalogRepo.get(SettingsActivity.this).refreshAsync();
+                Toast.makeText(SettingsActivity.this, "Katalog yenileniyor", Toast.LENGTH_SHORT).show();
+                finish();
+            }
         });
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(-1, dp(44));
         blp.topMargin = dp(12);
-        c1.addView(save, blp);
+        c1.addView(refresh, blp);
 
         // Guncellemeler
         LinearLayout c2 = card(col, "Güncellemeler");
@@ -156,28 +143,6 @@ public class SettingsActivity extends Activity {
             d.setPadding(0, 0, dp(56), dp(8));
             parent.addView(d);
         }
-    }
-
-    private void saveSources() {
-        StringBuilder clean = new StringBuilder();
-        for (String line : sources.getText().toString().split("\\s+")) {
-            line = line.trim();
-            if (line.isEmpty()) continue;
-            if (!line.startsWith("http://") && !line.startsWith("https://")) line = "https://" + line;
-            try {
-                new URL(line);
-            } catch (Exception ex) {
-                Toast.makeText(this, "Geçersiz adres: " + line, Toast.LENGTH_LONG).show();
-                return;
-            }
-            if (clean.length() > 0) clean.append('\n');
-            clean.append(line);
-        }
-        CatalogRepo.prefs(this).edit().putString(CatalogRepo.KEY_SOURCES, clean.toString()).apply();
-        sources.setText(clean);
-        CatalogRepo.get(this).refreshAsync();
-        Toast.makeText(this, "Kaydedildi", Toast.LENGTH_SHORT).show();
-        finish();
     }
 
     @Override

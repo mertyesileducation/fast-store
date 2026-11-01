@@ -33,7 +33,6 @@ final class CatalogRepo {
     interface Listener { void onCatalogChanged(); }
 
     static final String PREFS = "ayarlar";
-    static final String KEY_SOURCES = "kaynaklar";
     static final String KEY_AUTO = "otomatik_kontrol";
     static final String KEY_WIFI = "sadece_wifi";
     static final String KEY_SILENT = "sessiz_guncelleme";
@@ -62,14 +61,12 @@ final class CatalogRepo {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    /** Magazanin sabit katalog adresi (kullanici degistiremez). */
+    static final String CATALOG_URL =
+            "https://raw.githubusercontent.com/mertyesileducation/fast-store/main/katalog/katalog.json";
+
     List<String> sources() {
-        String raw = prefs(ctx).getString(KEY_SOURCES, "");
-        List<String> out = new ArrayList<>();
-        for (String s : raw.split("\\s+")) {
-            s = s.trim();
-            if (!s.isEmpty()) out.add(s);
-        }
-        return out;
+        return java.util.Collections.singletonList(CATALOG_URL);
     }
 
     List<AppEntry> apps() { return apps; }

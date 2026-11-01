@@ -19,7 +19,7 @@ Kendi APK'larını listeleyen, indiren, kuran ve güncelleyen bir Android uygula
 1. [Releases](../../releases) sayfasından en son `FastStore-x.y.apk` dosyasını indirip telefonda aç.
 2. Telefon "bilinmeyen kaynak" uyarısı verirse, dosyayı açtığın uygulamaya izin ver.
 3. Play Protect "tanınmayan geliştirici" uyarısı gösterebilir. Bunun nedeni uygulamanın kendi anahtarınla imzalanmış olması; **"Yine de yükle"** seçeneğini kullan.
-4. Fast Store'u aç, sağ üstteki menüden **Ayarlar**'a gir ve katalog adresini yaz.
+4. Fast Store'u aç; uygulamalar sabit katalogdan otomatik gelir.
 
 ## Kendi mağazanı yayınlama
 1. APK'larını bir klasöre koy (örnek için `katalog/` klasörüne bak).
@@ -31,7 +31,7 @@ Kendi APK'larını listeleyen, indiren, kuran ve güncelleyen bir Android uygula
 4. Klasörü internette erişilebilir bir yere yükle. En kolay yol bir GitHub deposu:
    `https://raw.githubusercontent.com/KULLANICI/DEPO/main/katalog.json`
    (GitHub Pages, kendi sunucun, Netlify vb. de olur.)
-5. Bu adresi Fast Store'un Ayarlar ekranına gir.
+5. Kendi katalog adresini kullanmak için `src/com/kisisel/magaza/CatalogRepo.java` içindeki `CATALOG_URL` değerini değiştirip yeniden derle.
 
 APK adresleri `katalog.json` dosyasının konumuna göre çözülür. Yani APK'lar ve ikonlar aynı klasördeyse sadece dosya adını yazman yeterli.
 
@@ -40,7 +40,7 @@ Yeni bir sürüm çıkardığında APK'yı klasöre koy (eskisini silebilirsin),
 **İpucu:** Fast Store'un kendi APK'sını da kataloğa ekle. Böylece mağaza kendini de güncelleyebilir.
 
 ### Hazır katalog
-Bu depodaki `katalog/` klasörü Fast Store ve MY Eğitim'i içerir. Fast Store'un Ayarlar ekranına şu adresi gir:
+Bu depodaki `katalog/` klasörü Fast Store ve MY Eğitim'i içerir. Fast Store 1.1 ve sonrası **yalnızca bu katalogu kullanır**; adres uygulamaya gömülüdür ve değiştirilemez (`CatalogRepo.CATALOG_URL`):
 ```
 https://raw.githubusercontent.com/mertyesileducation/fast-store/main/katalog/katalog.json
 ```

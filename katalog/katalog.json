@@ -7,12 +7,12 @@
       "author": "Mert Yeşil",
       "category": "Araçlar",
       "description": "Kendi uygulamalarım için kişisel uygulama mağazası. Mağaza kendini de buradan güncelleyebilir.",
-      "changelog": "İlk sürüm.",
-      "versionCode": 1,
-      "versionName": "1.0",
-      "size": 40709,
-      "sha256": "1c65e68d997c36207b06b470ef5760014806efc41ba22a7cf4aab075734b2e34",
-      "apkUrl": "FastStore-1.0.apk",
+      "changelog": "Katalog adresi artık sabit: uygulamalar doğrudan resmi katalogdan gelir, ayar gerekmez.",
+      "versionCode": 2,
+      "versionName": "1.1",
+      "size": 40298,
+      "sha256": "6ca8551b26f71780872cd269a514635d97866b23b1eca48e7177f08bc0c5d713",
+      "apkUrl": "FastStore-1.1.apk",
       "iconUrl": "com.kisisel.magaza.png"
     },
     {

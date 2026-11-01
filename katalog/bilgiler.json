@@ -4,7 +4,7 @@
     "author": "Mert Yeşil",
     "category": "Araçlar",
     "description": "Kendi uygulamalarım için kişisel uygulama mağazası. Mağaza kendini de buradan güncelleyebilir.",
-    "changelog": "İlk sürüm."
+    "changelog": "Katalog adresi artık sabit: uygulamalar doğrudan resmi katalogdan gelir, ayar gerekmez."
   },
   "com.mertyesil.egitim": {
     "name": "MY Eğitim",
