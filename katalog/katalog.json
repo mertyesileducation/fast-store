@@ -1,0 +1,33 @@
+{
+  "name": "Fast Store",
+  "apps": [
+    {
+      "packageName": "com.kisisel.magaza",
+      "name": "Fast Store",
+      "author": "Mert Yeşil",
+      "category": "Araçlar",
+      "description": "Kendi uygulamalarım için kişisel uygulama mağazası. Mağaza kendini de buradan güncelleyebilir.",
+      "changelog": "İlk sürüm.",
+      "versionCode": 1,
+      "versionName": "1.0",
+      "size": 40709,
+      "sha256": "1c65e68d997c36207b06b470ef5760014806efc41ba22a7cf4aab075734b2e34",
+      "apkUrl": "FastStore-1.0.apk",
+      "iconUrl": "com.kisisel.magaza.png"
+    },
+    {
+      "packageName": "com.mertyesil.egitim",
+      "name": "MY Eğitim",
+      "author": "Mert Yeşil",
+      "category": "Eğitim",
+      "description": "Mert Yeşil Eğitim Portalı'nın resmi uygulaması.\n\n• Portal: mertyesil.com.tr uygulama içinde; üye girişi, dosya indirme/yükleme, favoriler ve çevrimdışı mod.\n• Pomodoro: ayarlanabilir odak ve mola süreleri. Kilit ekranında ve uygulama kapalıyken de çalışır. Bildirimden kontrol edilir, hızlı ayarlar kutucuğu vardır.\n• İstatistik: günlük hedef, seri, 7 günlük grafik ve konulara göre dağılım.\n• Ayarlar: açık/koyu tema, yazı boyutu, bildirim ve ses seçenekleri.",
+      "changelog": "İlk sürüm: Portal, Pomodoro, İstatistik ve Ayarlar.",
+      "versionCode": 1,
+      "versionName": "1.0",
+      "size": 98708,
+      "sha256": "cb50504b9aab1675eb8feeac5102ec5dc85b9d087f0bacc6b33bd90bd166f7c2",
+      "apkUrl": "MYEgitim-1.0.apk",
+      "iconUrl": "com.mertyesil.egitim.png"
+    }
+  ]
+}

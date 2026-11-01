@@ -22,11 +22,11 @@ Kendi APK'larını listeleyen, indiren, kuran ve güncelleyen bir Android uygula
 4. Fast Store'u aç, sağ üstteki menüden **Ayarlar**'a gir ve katalog adresini yaz.
 
 ## Kendi mağazanı yayınlama
-1. APK'larını bir klasöre koy (örnek için `ornek-magaza/` klasörüne bak).
+1. APK'larını bir klasöre koy (örnek için `katalog/` klasörüne bak).
 2. İsteğe bağlı olarak `<paket.adı>.png` adıyla ikon ve `bilgiler.json` içine açıklamalar ekle.
 3. Katalog dosyasını oluştur:
    ```bash
-   python3 katalog_olustur.py ornek-magaza --ad "Fast Store"
+   python3 katalog_olustur.py katalog --ad "Fast Store"
    ```
 4. Klasörü internette erişilebilir bir yere yükle. En kolay yol bir GitHub deposu:
    `https://raw.githubusercontent.com/KULLANICI/DEPO/main/katalog.json`
@@ -37,7 +37,14 @@ APK adresleri `katalog.json` dosyasının konumuna göre çözülür. Yani APK'l
 
 Yeni bir sürüm çıkardığında APK'yı klasöre koy (eskisini silebilirsin), `katalog_olustur.py`'yi tekrar çalıştır ve yükle. Fast Store güncellemeyi kendisi bulur.
 
-**İpucu:** Fast Store'un kendi APK'sını da kataloğa ekle (örnekte eklenmiş durumda). Böylece mağaza kendini de güncelleyebilir.
+**İpucu:** Fast Store'un kendi APK'sını da kataloğa ekle. Böylece mağaza kendini de güncelleyebilir.
+
+### Hazır katalog
+Bu depodaki `katalog/` klasörü Fast Store ve MY Eğitim'i içerir. Fast Store'un Ayarlar ekranına şu adresi gir:
+```
+https://raw.githubusercontent.com/mertyesileducation/fast-store/main/katalog/katalog.json
+```
+Yeni bir APK eklemek için onu `katalog/` klasörüne koy, eski sürümü sil, `python3 katalog_olustur.py katalog --ad "Fast Store"` komutunu çalıştır ve gönder.
 
 ### katalog.json alanları
 | Alan | Zorunlu | Açıklama |
