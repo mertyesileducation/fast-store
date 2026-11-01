@@ -31,6 +31,7 @@ python3 build/package.py "$OUT/unsigned.apk" "$OUT/res" "$OUT/classes.dex"
 echo "5/5 İmzalanıyor"
 KS=keystore/magazam.p12
 if [ ! -f "$KS" ]; then
+  if [ -n "${CI:-}" ]; then echo "HATA: CI ortamında imza anahtarı bulunamadı" >&2; exit 1; fi
   PASS=$(python3 -c "import secrets;print(secrets.token_urlsafe(18))")
   keytool -genkeypair -storetype PKCS12 -keystore "$KS" -storepass "$PASS" \
           -alias magazam -keyalg RSA -keysize 4096 -validity 10000 \

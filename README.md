@@ -70,3 +70,10 @@ Derleme araçları depoda tutulmaz; `build.sh` ilk çalıştırmada bunları `to
 - `android.jar`: Android 14 API'si, sadece derleme için kullanılır
 
 `build/mini_aapt.py`, aapt2'nin yerine manifesti ve kaynak tablosunu derler.
+
+## Otomatik sürüm (GitHub Actions)
+1. **Bir kerelik kurulum:** Deponun *Settings → Secrets and variables → Actions* bölümüne iki secret ekle:
+   - `KEYSTORE_BASE64`: `keystore/magazam.p12` dosyasının base64 hâli (`base64 -w0 keystore/magazam.p12`)
+   - `KEYSTORE_PASSWORD`: `keystore/sifre.txt` dosyasının içeriği
+2. Yeni sürüm için `AndroidManifest.xml`'deki `versionCode` ve `versionName` değerlerini artırıp gönder.
+3. *Actions → Release → Run workflow* ile çalıştır. APK derlenir, imzalanır ve `v<sürüm>` etiketiyle Releases sayfasına eklenir.

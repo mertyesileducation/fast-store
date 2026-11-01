@@ -1,0 +1,76 @@
+name: Release
+
+# Actions sekmesinden elle calistirilir. AndroidManifest.xml'deki versionName ile
+# "v<surum>" etiketli bir surum olusturur ve imzali APK'yi ekler.
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Sürüm notları (isteğe bağlı)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Sürümü oku
+        id: ver
+        run: |
+          V=$(grep -o 'android:versionName="[^"]*"' AndroidManifest.xml | cut -d'"' -f2)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" >/dev/null 2>&1; then
+            echo "::error::v$V sürümü zaten var. AndroidManifest.xml'de versionCode ve versionName değerlerini artır."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: İmza anahtarını yükle
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::KEYSTORE_BASE64 ve KEYSTORE_PASSWORD secret'ları eksik (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          mkdir -p keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore/magazam.p12
+          printf '%s' "$KEYSTORE_PASSWORD" > keystore/sifre.txt
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Derle ve imzala
+        run: ./build.sh
+
+      - name: Sürüm oluştur
+        run: |
+          V=${{ steps.ver.outputs.version }}
+          APK=dist/FastStore-$V.apk
+          SUM=$(sha256sum "$APK" | cut -d' ' -f1)
+          {
+            echo "## Fast Store $V"
+            echo
+            if [ -n "$NOTES" ]; then echo "$NOTES"; echo; fi
+            echo "Telefona **FastStore-$V.apk** dosyasını indirip kur (Android 8.0+)."
+            echo "Play Protect uyarı verirse \"Yine de yükle\" seç."
+            echo
+            echo "APK SHA-256: \`$SUM\`"
+          } > notes.md
+          gh release create "v$V" "$APK" --target "$GITHUB_SHA" --title "Fast Store $V" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
+
+      - name: Anahtarı sil
+        if: always()
+        run: rm -rf keystore
