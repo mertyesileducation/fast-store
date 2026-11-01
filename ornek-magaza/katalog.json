@@ -1,0 +1,19 @@
+{
+  "name": "Fast Store",
+  "apps": [
+    {
+      "packageName": "com.kisisel.magaza",
+      "name": "Fast Store",
+      "author": "Ben",
+      "category": "Araçlar",
+      "description": "Kendi uygulamalarım için kişisel uygulama mağazası. Mağaza kendini de buradan güncelleyebilir.",
+      "changelog": "İlk sürüm.",
+      "versionCode": 1,
+      "versionName": "1.0",
+      "size": 40709,
+      "sha256": "1c65e68d997c36207b06b470ef5760014806efc41ba22a7cf4aab075734b2e34",
+      "apkUrl": "FastStore-1.0.apk",
+      "iconUrl": "com.kisisel.magaza.png"
+    }
+  ]
+}

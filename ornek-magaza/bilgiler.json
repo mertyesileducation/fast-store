@@ -1,0 +1,9 @@
+{
+  "com.kisisel.magaza": {
+    "name": "Fast Store",
+    "author": "Ben",
+    "category": "Araçlar",
+    "description": "Kendi uygulamalarım için kişisel uygulama mağazası. Mağaza kendini de buradan güncelleyebilir.",
+    "changelog": "İlk sürüm."
+  }
+}

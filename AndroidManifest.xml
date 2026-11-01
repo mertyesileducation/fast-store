@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.kisisel.magaza"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+
+    <application
+        android:name="com.kisisel.magaza.App"
+        android:label="Fast Store"
+        android:icon="@drawable/ic_launcher"
+        android:theme="@android:style/Theme.Material.Light.DarkActionBar"
+        android:allowBackup="true"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name="com.kisisel.magaza.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="stateHidden|adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.kisisel.magaza.DetailActivity"
+            android:exported="false"
+            android:parentActivityName="com.kisisel.magaza.MainActivity" />
+
+        <activity
+            android:name="com.kisisel.magaza.SettingsActivity"
+            android:exported="false"
+            android:label="Ayarlar"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName="com.kisisel.magaza.MainActivity" />
+
+        <receiver
+            android:name="com.kisisel.magaza.InstallResultReceiver"
+            android:exported="false" />
+
+        <service
+            android:name="com.kisisel.magaza.UpdateCheckJob"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+    </application>
+</manifest>
