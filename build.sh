@@ -14,10 +14,10 @@ rm -rf "$OUT"
 mkdir -p "$OUT/classes" dist keystore
 
 echo "1/5 Kaynaklar derleniyor"
-python3 build/mini_aapt.py AndroidManifest.xml "$OUT/res"
+python3 build/mini_aapt.py AndroidManifest.xml res "$OUT/res" com.kisisel.magaza
 
 echo "2/5 Java derleniyor"
-find src -name '*.java' > "$OUT/sources.txt"
+find src "$OUT/res/gen" -name '*.java' > "$OUT/sources.txt"
 javac -nowarn -Xlint:-options -encoding UTF-8 -source 8 -target 8 \
       -bootclasspath "$T/android.jar" -d "$OUT/classes" @"$OUT/sources.txt"
 

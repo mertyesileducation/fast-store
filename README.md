@@ -2,18 +2,47 @@
 
 Kendi APK'larını listeleyen, indiren, kuran ve güncelleyen bir Android uygulama mağazası.
 
-## Özellikler
-- **Keşfet / Güncellemeler / Yüklü** sekmeleri
-- Arama ve kategori filtreleri
-- Uygulama detay sayfası: ikon, ekran görüntüleri, açıklama, "Yenilikler", sürüm bilgileri
-- İndirme sırasında ilerleme çubuğu ve iptal düğmesi
-- **Güvenlik:** her APK, SHA-256 özeti ve paket adı kontrol edildikten sonra kurulur
-- **Tümünü güncelle** düğmesi
-- Arka planda otomatik güncelleme kontrolü ve bildirim (yaklaşık 6 saatte bir, istersen sadece Wi-Fi'de)
-- Android 12 ve üzerinde, mağazanın kurduğu uygulamalar onay sorulmadan güncellenebilir
-- Birden fazla katalog adresi eklenebilir; kataloglar tek listede birleştirilir
-- Kaldırma düğmesi, açık/koyu tema desteği
-- Android 8.0 ve üzeri (minSdk 26, targetSdk 34)
+## Özellikler (2.0)
+
+### Keşfet
+- **Vitrin:** öne çıkan uygulamalar kayan afişlerle gösterilir (otomatik ilerler, parmakla kaydırılır).
+- **Kategoriler:** kategori çipleri ve her kategori için yatay raf.
+- **Yeni eklenenler** ve **Son güncellenenler** rafları, ayrıca tüm uygulamalar listesi.
+- Yüklenirken iskelet animasyonu; hata durumunda "Tekrar dene" ekranı.
+
+### Ara
+- Puanlı sıralama: ad, etiket, kategori, geliştirici ve açıklamada arar. Türkçe karakter fark etmez (ş/s, ı/i…).
+- Son aramalar ve kategorilere göz atma.
+
+### Uygulama sayfası
+- Afiş ve ekran görüntüleri; tam ekran, kaydırılabilir görüntüleyici.
+- Sürüm, boyut, gereken Android sürümü, kategori ve güncelleme tarihi.
+- "Bu uygulama hakkında" (genişletilebilir), etiketler ve **Yenilikler**.
+- **İzinler:** APK'dan otomatik okunur, Türkçe açıklanır; hassas izinler işaretlenir.
+- **Fast Protect** kartı: dosya özeti, geliştirici imza parmak izi ve paket kimliği. Yüklü sürümün imzası da karşılaştırılır.
+- Geliştirici iletişimi (web, e-posta, gizlilik politikası), aynı geliştiricinin diğer uygulamaları ve benzer uygulamalar.
+- Paylaş, indirme bağlantısını kopyala, kaldır, sistem uygulama ayarları.
+
+### Güncellemeler ve Kitaplık
+- Güncelleme sayısı alt menüde rozet olarak görünür; tek dokunuşla "Tümünü güncelle".
+- **Otomatik güncelleme:** kapalı / sadece Wi-Fi / her zaman. Android 12 ve üzerinde Fast Store'un yüklediği uygulamalar arka planda onaysız güncellenir.
+- **Kitaplık:** yüklü uygulamalar, kapladıkları alan ve kurulum/güncelleme/kaldırma geçmişi.
+
+### Güvenlik: Fast Protect
+Her kurulumdan önce:
+1. Cihaz uyumu (minimum Android sürümü) ve yeterli boş alan kontrol edilir.
+2. İndirilen dosyanın **SHA-256** özeti katalogla karşılaştırılır.
+3. APK'daki **paket adı** katalogla eşleşmelidir.
+4. APK'nın **geliştirici imza sertifikası** katalogdaki parmak iziyle eşleşmelidir.
+5. Uygulama zaten yüklüyse, **yüklü sürümün imzası** da aynı olmalıdır.
+
+Herhangi biri tutmazsa kurulum durdurulur.
+
+### Diğer
+- İndirme ilerlemesi (hız ve boyutla) bildirimde görünür. Kurulum bitince "Açmak için dokun" bildirimi gelir.
+- Mobil veride büyük indirmeler için uyarı.
+- Açık / koyu / sistem teması.
+- Yeni mağaza ikonu.
 
 ## Kurulum
 1. [Releases](../../releases) sayfasından en son `FastStore-x.y.apk` dosyasını indirip telefonda aç.
@@ -45,6 +74,8 @@ Bu depodaki `katalog/` klasörü Fast Store ve MY Eğitim'i içerir. Fast Store 
 https://raw.githubusercontent.com/mertyesileducation/fast-store/main/katalog/katalog.json
 ```
 Yeni bir APK eklemek için onu `katalog/` klasörüne koy, eski sürümü sil, `python3 katalog_olustur.py katalog --ad "Fast Store"` komutunu çalıştır ve gönder.
+
+`katalog_olustur.py` izinleri, minimum/hedef Android sürümünü ve imza parmak izini APK'dan kendisi okur. Vitrin afişleri için `python3 scripts/vitrin_uret.py katalog` komutunu kullan (Pillow gerekir). `bilgiler.json` dosyasında `shortDescription`, `tags`, `featured`, `website`, `email`, `privacy` ve `screenshots` alanları da kullanılabilir.
 
 ### katalog.json alanları
 | Alan | Zorunlu | Açıklama |

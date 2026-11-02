@@ -1,7 +1,6 @@
 package com.kisisel.magaza;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -24,18 +23,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Katalog kaynaklarini indirir, birlestirir ve onbellekte tutar. */
+/** Katalogu indirir, onbellekte tutar ve sorgular. */
 final class CatalogRepo {
     interface Listener { void onCatalogChanged(); }
 
-    static final String PREFS = "ayarlar";
-    static final String KEY_AUTO = "otomatik_kontrol";
-    static final String KEY_WIFI = "sadece_wifi";
-    static final String KEY_SILENT = "sessiz_guncelleme";
+    /** Magazanin sabit katalog adresi (kullanici degistiremez). */
+    static final String CATALOG_URL =
+            "https://raw.githubusercontent.com/mertyesileducation/fast-store/main/katalog/katalog.json";
 
     private static CatalogRepo instance;
 
@@ -46,6 +45,7 @@ final class CatalogRepo {
     private volatile boolean loading;
     private volatile String lastError;
     private volatile long lastUpdated;
+    private volatile String storeName = "Fast Store";
 
     static synchronized CatalogRepo get(Context c) {
         if (instance == null) instance = new CatalogRepo(c.getApplicationContext());
@@ -57,32 +57,23 @@ final class CatalogRepo {
         loadCache();
     }
 
-    static SharedPreferences prefs(Context c) {
-        return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    }
-
-    /** Magazanin sabit katalog adresi (kullanici degistiremez). */
-    static final String CATALOG_URL =
-            "https://raw.githubusercontent.com/mertyesileducation/fast-store/main/katalog/katalog.json";
-
-    List<String> sources() {
-        return java.util.Collections.singletonList(CATALOG_URL);
-    }
-
     List<AppEntry> apps() { return apps; }
     boolean isLoading() { return loading; }
     String lastError() { return lastError; }
     long lastUpdated() { return lastUpdated; }
+    String storeName() { return storeName; }
+    boolean isEmpty() { return apps.isEmpty(); }
 
     AppEntry find(String pkg) {
+        if (pkg == null) return null;
         for (AppEntry e : apps) if (e.packageName.equals(pkg)) return e;
         return null;
     }
 
-    void addListener(Listener l) { listeners.add(l); }
+    void addListener(Listener l) { if (!listeners.contains(l)) listeners.add(l); }
     void removeListener(Listener l) { listeners.remove(l); }
 
-    private void notifyListeners() {
+    void notifyListeners() {
         main.post(new Runnable() {
             @Override public void run() {
                 for (Listener l : listeners) l.onCatalogChanged();
@@ -90,7 +81,8 @@ final class CatalogRepo {
         });
     }
 
-    /** Arka planda yeniler. */
+    boolean isStale() { return System.currentTimeMillis() - lastUpdated > 10 * 60 * 1000; }
+
     void refreshAsync() {
         if (loading) return;
         loading = true;
@@ -99,8 +91,7 @@ final class CatalogRepo {
             @Override public void run() {
                 try {
                     refreshBlocking();
-                } catch (Exception e) {
-                    // refreshBlocking hatayi zaten kaydeder
+                } catch (Exception ignored) {
                 } finally {
                     loading = false;
                     notifyListeners();
@@ -109,49 +100,30 @@ final class CatalogRepo {
         }, "katalog").start();
     }
 
-    /** Tum kaynaklari indirir. Hicbiri basarili olmazsa istisna firlatir. */
     synchronized List<AppEntry> refreshBlocking() throws Exception {
-        List<String> srcs = sources();
-        if (srcs.isEmpty()) {
+        try {
+            List<AppEntry> list = fetch(CATALOG_URL);
+            Collections.sort(list, new Comparator<AppEntry>() {
+                @Override public int compare(AppEntry a, AppEntry b) { return a.name.compareToIgnoreCase(b.name); }
+            });
+            apps = list;
             lastError = null;
-            apps = new ArrayList<>();
-            lastUpdated = 0;
+            lastUpdated = System.currentTimeMillis();
+            Prefs.put(ctx, Prefs.LAST_CHECK, lastUpdated);
             saveCache();
-            return apps;
+            return list;
+        } catch (Exception ex) {
+            lastError = describe(ex);
+            throw ex;
         }
-        Map<String, AppEntry> merged = new LinkedHashMap<>();
-        StringBuilder errors = new StringBuilder();
-        int ok = 0;
-        for (String src : srcs) {
-            try {
-                for (AppEntry e : fetch(src)) {
-                    AppEntry prev = merged.get(e.packageName);
-                    if (prev == null || e.versionCode > prev.versionCode) merged.put(e.packageName, e);
-                }
-                ok++;
-            } catch (Exception ex) {
-                if (errors.length() > 0) errors.append('\n');
-                errors.append(src).append(": ").append(describe(ex));
-            }
-        }
-        lastError = errors.length() == 0 ? null : errors.toString();
-        if (ok == 0) throw new Exception(lastError);
-        List<AppEntry> list = new ArrayList<>(merged.values());
-        Collections.sort(list, new Comparator<AppEntry>() {
-            @Override public int compare(AppEntry a, AppEntry b) {
-                return a.name.compareToIgnoreCase(b.name);
-            }
-        });
-        apps = list;
-        lastUpdated = System.currentTimeMillis();
-        saveCache();
-        return list;
     }
 
     static String describe(Exception ex) {
-        if (ex instanceof java.net.UnknownHostException) return "Sunucu bulunamadı (internet bağlantını kontrol et)";
-        if (ex instanceof java.net.SocketTimeoutException) return "Zaman aşımı";
-        if (ex instanceof org.json.JSONException) return "Katalog dosyası geçerli JSON değil";
+        if (ex instanceof java.net.UnknownHostException) return "İnternet bağlantısı yok";
+        if (ex instanceof java.net.SocketTimeoutException) return "Sunucu yanıt vermedi (zaman aşımı)";
+        if (ex instanceof java.net.ConnectException) return "Sunucuya bağlanılamadı";
+        if (ex instanceof javax.net.ssl.SSLException) return "Güvenli bağlantı kurulamadı";
+        if (ex instanceof org.json.JSONException) return "Katalog dosyası bozuk";
         String m = ex.getMessage();
         return m == null ? ex.getClass().getSimpleName() : m;
     }
@@ -163,27 +135,20 @@ final class CatalogRepo {
         c.setReadTimeout(20000);
         c.setUseCaches(false);
         c.setRequestProperty("Cache-Control", "no-cache");
-        c.setRequestProperty("User-Agent", "FastStore/1.0 (Android)");
+        c.setRequestProperty("User-Agent", userAgent(ctx));
         int code = c.getResponseCode();
-        if (code != 200) throw new Exception("HTTP " + code);
+        if (code != 200) throw new Exception("Sunucu hatası (HTTP " + code + ")");
         String body;
         try (InputStream in = c.getInputStream()) {
             body = readAll(in);
         } finally {
             c.disconnect();
         }
-        URL base = c.getURL(); // yonlendirmeden sonraki gercek adres
-        body = body.trim();
-        JSONArray arr;
-        String storeName = url.getHost();
-        if (body.startsWith("[")) {
-            arr = new JSONArray(body);
-        } else {
-            JSONObject root = new JSONObject(body);
-            storeName = root.optString("name", storeName);
-            arr = root.optJSONArray("apps");
-            if (arr == null) throw new Exception("\"apps\" listesi bulunamadı");
-        }
+        URL base = c.getURL();
+        JSONObject root = new JSONObject(body.trim());
+        storeName = root.optString("name", "Fast Store");
+        JSONArray arr = root.optJSONArray("apps");
+        if (arr == null) throw new Exception("Katalogda uygulama listesi yok");
         List<AppEntry> out = new ArrayList<>();
         for (int i = 0; i < arr.length(); i++) {
             JSONObject o = arr.optJSONObject(i);
@@ -191,10 +156,15 @@ final class CatalogRepo {
             try {
                 out.add(AppEntry.parse(o, base, storeName));
             } catch (Exception ignored) {
-                // hatali girdileri atla
             }
         }
         return out;
+    }
+
+    static String userAgent(Context c) {
+        String v = "2";
+        try { v = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName; } catch (Exception ignored) {}
+        return "FastStore/" + v + " (Android " + Build.VERSION.RELEASE + "; " + Build.MODEL + ")";
     }
 
     static String readAll(InputStream in) throws Exception {
@@ -205,16 +175,17 @@ final class CatalogRepo {
         return new String(bos.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    private File cacheFile() { return new File(ctx.getFilesDir(), "katalog.json"); }
+    private File cacheFile() { return new File(ctx.getFilesDir(), "katalog_v2.json"); }
 
     private void saveCache() {
         try {
             JSONObject root = new JSONObject();
             root.put("updated", lastUpdated);
+            root.put("name", storeName);
             JSONArray a = new JSONArray();
-            for (AppEntry e : apps) a.put(e.toJson());
+            for (AppEntry e : apps) a.put(e.raw);
             root.put("apps", a);
-            File tmp = new File(ctx.getFilesDir(), "katalog.json.tmp");
+            File tmp = new File(ctx.getFilesDir(), "katalog_v2.json.tmp");
             try (FileOutputStream out = new FileOutputStream(tmp)) {
                 out.write(root.toString().getBytes(StandardCharsets.UTF_8));
             }
@@ -229,6 +200,7 @@ final class CatalogRepo {
         try (InputStream in = new FileInputStream(f)) {
             JSONObject root = new JSONObject(readAll(in));
             lastUpdated = root.optLong("updated", 0);
+            storeName = root.optString("name", storeName);
             JSONArray a = root.getJSONArray("apps");
             List<AppEntry> list = new ArrayList<>();
             for (int i = 0; i < a.length(); i++) list.add(AppEntry.fromCache(a.getJSONObject(i)));
@@ -244,20 +216,113 @@ final class CatalogRepo {
         notifyListeners();
     }
 
-    List<String> categories() {
-        TreeSet<String> set = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        for (AppEntry e : apps) set.add(e.category);
-        return new ArrayList<>(set);
+    // ---- Sorgular ----
+
+    List<AppEntry> featured() {
+        List<AppEntry> out = new ArrayList<>();
+        for (AppEntry e : apps) if (e.featured) out.add(e);
+        if (out.isEmpty()) out.addAll(recentlyUpdated(5));
+        return out;
+    }
+
+    List<AppEntry> newest(int max) {
+        List<AppEntry> l = new ArrayList<>(apps);
+        Collections.sort(l, new Comparator<AppEntry>() {
+            @Override public int compare(AppEntry a, AppEntry b) { return Long.compare(b.added, a.added); }
+        });
+        return l.subList(0, Math.min(max, l.size()));
+    }
+
+    List<AppEntry> recentlyUpdated(int max) {
+        List<AppEntry> l = new ArrayList<>(apps);
+        Collections.sort(l, new Comparator<AppEntry>() {
+            @Override public int compare(AppEntry a, AppEntry b) { return Long.compare(b.updated, a.updated); }
+        });
+        return l.subList(0, Math.min(max, l.size()));
+    }
+
+    /** Kategori -> uygulamalar (kategori adina gore sirali). */
+    Map<String, List<AppEntry>> byCategory() {
+        Map<String, List<AppEntry>> m = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (AppEntry e : apps) {
+            List<AppEntry> l = m.get(e.category);
+            if (l == null) {
+                l = new ArrayList<>();
+                m.put(e.category, l);
+            }
+            l.add(e);
+        }
+        return m;
+    }
+
+    List<AppEntry> inCategory(String cat) {
+        List<AppEntry> out = new ArrayList<>();
+        for (AppEntry e : apps) if (e.category.equalsIgnoreCase(cat)) out.add(e);
+        return out;
+    }
+
+    List<AppEntry> similar(AppEntry x, int max) {
+        List<AppEntry> out = new ArrayList<>();
+        for (AppEntry e : apps) {
+            if (e == x || e.packageName.equals(x.packageName)) continue;
+            if (e.category.equalsIgnoreCase(x.category)) out.add(e);
+        }
+        for (AppEntry e : apps) {
+            if (out.size() >= max) break;
+            if (!e.packageName.equals(x.packageName) && !out.contains(e)) out.add(e);
+        }
+        return out.subList(0, Math.min(max, out.size()));
+    }
+
+    List<AppEntry> fromAuthor(String author, String exceptPkg) {
+        List<AppEntry> out = new ArrayList<>();
+        if (author == null || author.isEmpty()) return out;
+        for (AppEntry e : apps) {
+            if (e.author.equalsIgnoreCase(author) && !e.packageName.equals(exceptPkg)) out.add(e);
+        }
+        return out;
+    }
+
+    /** Ad, etiket, gelistirici ve aciklamaya gore puanlanmis arama. */
+    List<AppEntry> search(String query) {
+        final String q = norm(query);
+        List<AppEntry> out = new ArrayList<>();
+        if (q.isEmpty()) return out;
+        final Map<AppEntry, Integer> score = new LinkedHashMap<>();
+        for (AppEntry e : apps) {
+            int s = 0;
+            String name = norm(e.name);
+            if (name.equals(q)) s += 100;
+            else if (name.startsWith(q)) s += 60;
+            else if (name.contains(q)) s += 40;
+            for (String t : e.tags) if (norm(t).startsWith(q)) s += 25;
+            if (norm(e.category).startsWith(q)) s += 20;
+            if (norm(e.author).contains(q)) s += 15;
+            if (norm(e.shortDescription).contains(q)) s += 10;
+            if (norm(e.description).contains(q)) s += 5;
+            if (e.packageName.toLowerCase(Locale.ROOT).contains(q)) s += 5;
+            if (s > 0) score.put(e, s);
+        }
+        out.addAll(score.keySet());
+        Collections.sort(out, new Comparator<AppEntry>() {
+            @Override public int compare(AppEntry a, AppEntry b) { return score.get(b) - score.get(a); }
+        });
+        return out;
+    }
+
+    /** Turkce karakter duyarsiz kucuk harf. */
+    static String norm(String s) {
+        if (s == null) return "";
+        return s.toLowerCase(new Locale("tr", "TR")).replace('ı', 'i').replace('ğ', 'g').replace('ü', 'u')
+                .replace('ş', 's').replace('ö', 'o').replace('ç', 'c').trim();
     }
 
     // ---- Yuklu uygulama bilgileri ----
 
-    /** Yuklu degilse -1 doner. */
     static long installedVersion(Context c, String pkg) {
         try {
             PackageInfo pi = c.getPackageManager().getPackageInfo(pkg, 0);
-            if (Build.VERSION.SDK_INT >= 28) return pi.getLongVersionCode();
-            return pi.versionCode;
+            return Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
         } catch (PackageManager.NameNotFoundException e) {
             return -1;
         }
@@ -268,6 +333,22 @@ final class CatalogRepo {
             return c.getPackageManager().getPackageInfo(pkg, 0).versionName;
         } catch (PackageManager.NameNotFoundException e) {
             return null;
+        }
+    }
+
+    static long installedSize(Context c, String pkg) {
+        try {
+            return new File(c.getPackageManager().getApplicationInfo(pkg, 0).sourceDir).length();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    static long firstInstallTime(Context c, String pkg) {
+        try {
+            return c.getPackageManager().getPackageInfo(pkg, 0).firstInstallTime;
+        } catch (Exception e) {
+            return 0;
         }
     }
 

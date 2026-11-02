@@ -17,7 +17,7 @@ import java.security.MessageDigest;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Bellek + disk onbellekli basit gorsel yukleyici. */
+/** Bellek + disk onbellekli gorsel yukleyici (yumusak gecisli). */
 final class ImageLoader {
     private static ImageLoader instance;
 
@@ -40,10 +40,10 @@ final class ImageLoader {
         };
     }
 
-    void load(final String url, final ImageView view, final int placeholderColor, final int maxPx) {
+    void load(final String url, final ImageView view, final int placeholder, final int maxPx) {
         view.setTag(url);
         if (url == null) {
-            view.setImageDrawable(Ui.round(placeholderColor, maxPx / 5f));
+            view.setImageDrawable(null);
             return;
         }
         final String key = url + "#" + maxPx;
@@ -52,7 +52,7 @@ final class ImageLoader {
             view.setImageBitmap(b);
             return;
         }
-        view.setImageDrawable(Ui.round(placeholderColor, maxPx / 5f));
+        view.setImageDrawable(null);
         pool.execute(new Runnable() {
             @Override public void run() {
                 final Bitmap bmp = fetch(url, maxPx);
@@ -60,7 +60,10 @@ final class ImageLoader {
                 mem.put(key, bmp);
                 main.post(new Runnable() {
                     @Override public void run() {
-                        if (url.equals(view.getTag())) view.setImageBitmap(bmp);
+                        if (!url.equals(view.getTag())) return;
+                        view.setAlpha(0f);
+                        view.setImageBitmap(bmp);
+                        view.animate().alpha(1f).setDuration(180).start();
                     }
                 });
             }
@@ -96,6 +99,13 @@ final class ImageLoader {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    long diskSize() {
+        long n = 0;
+        File[] files = dir.listFiles();
+        if (files != null) for (File f : files) n += f.length();
+        return n;
     }
 
     void clear() {

@@ -7,33 +7,86 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.InstallSourceInfo;
+import android.net.ConnectivityManager;
+import android.os.Build;
 
+import java.util.ArrayList;
 import java.util.List;
 
-/** Periyodik olarak kataloglari kontrol edip guncelleme bildirimi gosterir. */
+/**
+ * Periyodik arka plan isi: katalogu yeniler, otomatik guncelleme aciksa
+ * Fast Store'un yukledigi uygulamalari gunceller, kalanlar icin bildirim gosterir.
+ */
 public class UpdateCheckJob extends JobService {
     static final int NOTIF_ID = 42;
+    private volatile boolean stopped;
 
     @Override
     public boolean onStartJob(final JobParameters params) {
+        stopped = false;
         new Thread(new Runnable() {
             @Override public void run() {
                 boolean retry = false;
+                Context c = UpdateCheckJob.this;
                 try {
-                    CatalogRepo repo = CatalogRepo.get(UpdateCheckJob.this);
+                    CatalogRepo repo = CatalogRepo.get(c);
                     repo.refreshBlocking();
-                    showUpdates(UpdateCheckJob.this, repo.updates());
+                    List<AppEntry> updates = repo.updates();
+                    List<AppEntry> remaining = new ArrayList<>(updates);
+                    if (canAutoUpdate(c)) {
+                        AppEntry self = null;
+                        for (AppEntry e : updates) {
+                            if (stopped) break;
+                            if (e.packageName.equals(getPackageName())) { self = e; continue; }
+                            if (!installedByUs(c, e.packageName)) continue;
+                            InstallManager.get(c).installAndWait(e, 10);
+                            if (!CatalogRepo.hasUpdate(c, e)) remaining.remove(e);
+                        }
+                        // Fast Store kendini en son gunceller (surec yeniden baslar)
+                        if (self != null && !stopped) InstallManager.get(c).enqueue(self);
+                    }
+                    if (Prefs.notifyUpdates(c)) showUpdates(c, remaining);
                 } catch (Exception e) {
                     retry = true;
                 }
-                jobFinished(params, retry);
+                jobFinished(params, retry && !stopped);
             }
-        }, "guncelleme-kontrol").start();
+        }, "guncelleme-isi").start();
         return true;
     }
 
     @Override
-    public boolean onStopJob(JobParameters params) { return true; }
+    public boolean onStopJob(JobParameters params) {
+        stopped = true;
+        return true;
+    }
+
+    private static boolean canAutoUpdate(Context c) {
+        int mode = Prefs.autoUpdate(c);
+        if (mode == 0) return false;
+        if (mode == 1) {
+            ConnectivityManager cm = (ConnectivityManager) c.getSystemService(CONNECTIVITY_SERVICE);
+            if (cm.isActiveNetworkMetered()) return false;
+        }
+        return Build.VERSION.SDK_INT >= 31 && Prefs.silent(c);
+    }
+
+    /** Onaysiz guncelleme sadece kurulum kaynagi Fast Store olan uygulamalarda calisir. */
+    static boolean installedByUs(Context c, String pkg) {
+        try {
+            String installer;
+            if (Build.VERSION.SDK_INT >= 30) {
+                InstallSourceInfo info = c.getPackageManager().getInstallSourceInfo(pkg);
+                installer = info.getInstallingPackageName();
+            } else {
+                installer = c.getPackageManager().getInstallerPackageName(pkg);
+            }
+            return c.getPackageName().equals(installer);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     static void showUpdates(Context c, List<AppEntry> updates) {
         NotificationManager nm = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
@@ -48,16 +101,18 @@ public class UpdateCheckJob extends JobService {
         }
         Intent open = new Intent(c, MainActivity.class)
                 .putExtra(MainActivity.EXTRA_TAB, MainActivity.TAB_UPDATES)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pi = PendingIntent.getActivity(c, 0, open,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         String title = updates.size() == 1 ? updates.get(0).name + " için güncelleme var"
-                : updates.size() + " güncelleme mevcut";
+                : updates.size() + " uygulama için güncelleme var";
         Notification n = new Notification.Builder(c, App.CH_UPDATES)
-                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setSmallIcon(R.drawable.ic_stat_store)
+                .setColor(Ui.PRIMARY)
                 .setContentTitle(title)
                 .setContentText(names.toString())
                 .setStyle(new Notification.BigTextStyle().bigText(names.toString()))
+                .setNumber(updates.size())
                 .setContentIntent(pi)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)

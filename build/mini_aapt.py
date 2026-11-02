@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""Mini kaynak derleyici: aapt2 olmadan APK icin ikili AndroidManifest.xml,
-resources.arsc ve uygulama ikonunu uretir.
+"""Mini kaynak derleyici: aapt2 olmadan APK icin ikili AndroidManifest.xml
+ve resources.arsc uretir.
 
-Kullanim: mini_aapt.py <AndroidManifest.xml> <cikti_klasoru>
-Cikti: <klasor>/AndroidManifest.xml, <klasor>/resources.arsc,
-       <klasor>/res/drawable/ic_launcher.png
+Kullanim: mini_aapt.py <AndroidManifest.xml> <res_klasoru> <cikti_klasoru> <R.java_paketi>
+res_klasoru/drawable/*.png dosyalarinin her biri bir drawable kaynagi olur.
+Cikti: AndroidManifest.xml (ikili), resources.arsc, res/drawable/*.png, gen/.../R.java
 """
 import os
 import struct
 import sys
-import zlib
 import xml.etree.ElementTree as ET
 
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
@@ -24,15 +23,27 @@ ATTR_IDS = {
     "windowSoftInputMode": 0x0101022B, "targetSdkVersion": 0x01010270,
     "allowBackup": 0x01010280, "parentActivityName": 0x010103A7,
     "supportsRtl": 0x010103AF, "usesCleartextTraffic": 0x010104EC,
+    "scheme": 0x01010027, "host": 0x01010028, "maxSdkVersion": 0x01010271,
+    "screenOrientation": 0x0101001E, "hardwareAccelerated": 0x010102D3,
+    "autoVerify": 0x010104EE, "roundIcon": 0x0101052C,
 }
 FRAMEWORK_REFS = {
     "@android:style/Theme.Material.Light.DarkActionBar": 0x01030238,
     "@android:style/Theme.DeviceDefault.Light.DarkActionBar": 0x0103013F,
+    "@android:style/Theme.Material.Light.NoActionBar": 0x01030241,
+    "@android:style/Theme.Material.NoActionBar": 0x0103022E,
 }
-APP_REFS = {"@drawable/ic_launcher": 0x7F010000}
-INT_ATTRS = {"versionCode", "minSdkVersion", "targetSdkVersion"}
+APP_REFS = {}  # main() doldurur: @drawable/<ad> -> 0x7F01xxxx
+INT_ATTRS = {"versionCode", "minSdkVersion", "targetSdkVersion", "maxSdkVersion"}
+FLAG_ATTRS = {
+    "configChanges": {"mcc": 0x1, "mnc": 0x2, "locale": 0x4, "touchscreen": 0x8,
+                      "keyboard": 0x10, "keyboardHidden": 0x20, "navigation": 0x40,
+                      "orientation": 0x80, "screenLayout": 0x100, "uiMode": 0x200,
+                      "screenSize": 0x400, "smallestScreenSize": 0x800, "density": 0x1000},
+}
 ENUM_ATTRS = {
     "launchMode": {"standard": 0, "singleTop": 1, "singleTask": 2, "singleInstance": 3},
+    "screenOrientation": {"unspecified": -1 & 0xFFFFFFFF, "portrait": 1, "sensor": 4},
     "windowSoftInputMode": {"adjustResize": 0x10, "adjustPan": 0x20,
                             "stateHidden|adjustResize": 0x12},
 }
@@ -116,6 +127,11 @@ def compile_manifest(path):
             return NO_INDEX, T_BOOLEAN, 0xFFFFFFFF if value == "true" else 0
         if is_android and name in INT_ATTRS:
             return NO_INDEX, T_INT_DEC, int(value)
+        if is_android and name in FLAG_ATTRS:
+            v = 0
+            for part in value.split("|"):
+                v |= FLAG_ATTRS[name][part]
+            return NO_INDEX, T_INT_HEX, v
         if is_android and name in ENUM_ATTRS:
             return NO_INDEX, T_INT_HEX if name == "windowSoftInputMode" else T_INT_DEC, ENUM_ATTRS[name][value]
         return idx[value], T_STRING, idx[value]
@@ -149,21 +165,26 @@ def compile_manifest(path):
     return struct.pack("<HHI", 0x0003, 8, 8 + len(chunks)) + bytes(chunks)
 
 
-def compile_arsc(package_name):
-    """Tek kaynak iceren tablo: drawable/ic_launcher -> res/drawable/ic_launcher.png"""
-    global_pool = string_pool(["res/drawable/ic_launcher.png"])
+def compile_arsc(package_name, names):
+    """drawable tipinde N kaynak: drawable/<ad> -> res/drawable/<ad>.png"""
+    global_pool = string_pool(["res/drawable/%s.png" % n for n in names])
     type_pool = string_pool(["drawable"])
-    key_pool = string_pool(["ic_launcher"])
+    key_pool = string_pool(names)
+    count = len(names)
 
-    type_spec = struct.pack("<HHIBBHI", 0x0202, 16, 16 + 4, 1, 0, 0, 1) + struct.pack("<I", 0)
+    type_spec = struct.pack("<HHIBBHI", 0x0202, 16, 16 + 4 * count, 1, 0, 0, count) + b"\x00" * (4 * count)
 
     config = struct.pack("<I", 64) + b"\x00" * 60
-    entry = struct.pack("<HHI", 8, 0, 0) + struct.pack("<HBBI", 8, 0, T_STRING, 0)
+    entries = b""
+    offsets = b""
+    for i in range(count):
+        offsets += struct.pack("<I", len(entries))
+        entries += struct.pack("<HHI", 8, 0, i) + struct.pack("<HBBI", 8, 0, T_STRING, i)
     type_header_size = 20 + len(config)
-    entries_start = type_header_size + 4
+    entries_start = type_header_size + 4 * count
     type_chunk = struct.pack("<HHIBBHII", 0x0201, type_header_size,
-                             entries_start + len(entry), 1, 0, 0, 1, entries_start)
-    type_chunk += config + struct.pack("<I", 0) + entry
+                             entries_start + len(entries), 1, 0, 0, count, entries_start)
+    type_chunk += config + offsets + entries
 
     name16 = package_name.encode("utf-16-le")[:254]
     name16 += b"\x00" * (256 - len(name16))
@@ -172,7 +193,7 @@ def compile_arsc(package_name):
     key_strings_off = type_strings_off + len(type_pool)
     pkg_body = type_pool + key_pool + type_spec + type_chunk
     pkg = struct.pack("<HHII", 0x0200, pkg_header_size, pkg_header_size + len(pkg_body), 0x7F)
-    pkg += name16 + struct.pack("<IIIII", type_strings_off, 1, key_strings_off, 1, 0)
+    pkg += name16 + struct.pack("<IIIII", type_strings_off, 1, key_strings_off, count, 0)
     assert len(pkg) == pkg_header_size
     pkg += pkg_body
 
@@ -180,61 +201,30 @@ def compile_arsc(package_name):
     return struct.pack("<HHII", 0x0002, 12, 12 + len(body), 1) + body
 
 
-def make_icon(size=192):
-    """Mavi-mor gecisli zemin uzerinde beyaz alisveris cantasi."""
-    import math
-    rows = []
-    r_corner = size * 0.22
-    for y in range(size):
-        row = bytearray([0])
-        for x in range(size):
-            # yuvarlatilmis kare maskesi
-            cx = min(max(x + 0.5, r_corner), size - r_corner)
-            cy = min(max(y + 0.5, r_corner), size - r_corner)
-            d = math.hypot(x + 0.5 - cx, y + 0.5 - cy)
-            alpha = max(0.0, min(1.0, r_corner - d + 0.5))
-            t = (x + y) / (2.0 * size)
-            r = int(37 + (124 - 37) * t)
-            g = int(99 + (58 - 99) * t)
-            b = int(235 + (237 - 235) * t)
-            u, v = x / size, y / size
-            white = False
-            # canta govdesi
-            if 0.27 <= u <= 0.73 and 0.38 <= v <= 0.78:
-                white = True
-            # sap (yay)
-            dh = math.hypot(u - 0.5, (v - 0.38) * 1.0)
-            if v < 0.40 and 0.13 <= dh <= 0.19:
-                white = True
-            # govde icinde gulumseme / ok
-            if 0.27 <= u <= 0.73 and 0.38 <= v <= 0.78:
-                ds = math.hypot(u - 0.5, v - 0.52)
-                if v > 0.52 and 0.10 <= ds <= 0.145:
-                    white = False
-            if white:
-                r, g, b = 255, 255, 255
-            row += bytes([r, g, b, int(alpha * 255)])
-        rows.append(bytes(row))
-    raw = b"".join(rows)
-
-    def chunk(tag, data):
-        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0))
-            + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
-
-
 def main():
-    manifest, out = sys.argv[1], sys.argv[2]
+    """Kullanim: mini_aapt.py <AndroidManifest.xml> <res_klasoru> <cikti_klasoru> <R.java_paketi>"""
+    manifest, res_dir, out, r_pkg = sys.argv[1:5]
+    import shutil
+    names = sorted(f[:-4] for f in os.listdir(os.path.join(res_dir, "drawable")) if f.endswith(".png"))
+    for i, n in enumerate(names):
+        APP_REFS["@drawable/" + n] = 0x7F010000 + i
     os.makedirs(os.path.join(out, "res", "drawable"), exist_ok=True)
+    for n in names:
+        shutil.copy(os.path.join(res_dir, "drawable", n + ".png"), os.path.join(out, "res", "drawable", n + ".png"))
     pkg = ET.parse(manifest).getroot().attrib["package"]
     with open(os.path.join(out, "AndroidManifest.xml"), "wb") as f:
         f.write(compile_manifest(manifest))
     with open(os.path.join(out, "resources.arsc"), "wb") as f:
-        f.write(compile_arsc(pkg))
-    with open(os.path.join(out, "res", "drawable", "ic_launcher.png"), "wb") as f:
-        f.write(make_icon())
-    print("Kaynaklar derlendi ->", out)
+        f.write(compile_arsc(pkg, names))
+    # Java icin R sinifi
+    gen = os.path.join(out, "gen", *r_pkg.split("."))
+    os.makedirs(gen, exist_ok=True)
+    with open(os.path.join(gen, "R.java"), "w") as f:
+        f.write("package %s;\n\npublic final class R {\n    public static final class drawable {\n" % r_pkg)
+        for i, n in enumerate(names):
+            f.write("        public static final int %s = 0x%08x;\n" % (n, 0x7F010000 + i))
+        f.write("    }\n}\n")
+    print("Kaynaklar derlendi -> %s (%d gorsel)" % (out, len(names)))
 
 
 if __name__ == "__main__":

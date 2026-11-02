@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kisisel.magaza"
-    android:versionCode="2"
-    android:versionName="1.1">
+    android:versionCode="3"
+    android:versionName="2.0">
 
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
 
@@ -19,15 +19,17 @@
         android:name="com.kisisel.magaza.App"
         android:label="Fast Store"
         android:icon="@drawable/ic_launcher"
-        android:theme="@android:style/Theme.Material.Light.DarkActionBar"
+        android:roundIcon="@drawable/ic_launcher"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="true"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false">
 
         <activity
             android:name="com.kisisel.magaza.MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:windowSoftInputMode="stateHidden|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,14 +40,16 @@
         <activity
             android:name="com.kisisel.magaza.DetailActivity"
             android:exported="false"
-            android:parentActivityName="com.kisisel.magaza.MainActivity" />
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" />
+
+        <activity
+            android:name="com.kisisel.magaza.ScreenshotActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
 
         <activity
             android:name="com.kisisel.magaza.SettingsActivity"
-            android:exported="false"
-            android:label="Ayarlar"
-            android:windowSoftInputMode="adjustResize"
-            android:parentActivityName="com.kisisel.magaza.MainActivity" />
+            android:exported="false" />
 
         <receiver
             android:name="com.kisisel.magaza.InstallResultReceiver"

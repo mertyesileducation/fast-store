@@ -1,33 +1,84 @@
 {
   "name": "Fast Store",
+  "generated": "2026-11-02",
   "apps": [
     {
       "packageName": "com.kisisel.magaza",
       "name": "Fast Store",
       "author": "Mert Yeşil",
       "category": "Araçlar",
-      "description": "Kendi uygulamalarım için kişisel uygulama mağazası. Mağaza kendini de buradan güncelleyebilir.",
-      "changelog": "Katalog adresi artık sabit: uygulamalar doğrudan resmi katalogdan gelir, ayar gerekmez.",
-      "versionCode": 2,
-      "versionName": "1.1",
-      "size": 40298,
-      "sha256": "6ca8551b26f71780872cd269a514635d97866b23b1eca48e7177f08bc0c5d713",
-      "apkUrl": "FastStore-1.1.apk",
-      "iconUrl": "com.kisisel.magaza.png"
+      "shortDescription": "Uygulamalarını keşfet, kur ve tek dokunuşla güncel tut.",
+      "description": "Fast Store, Mert Yeşil uygulamalarının resmi mağazasıdır.\n\n• Öne çıkanlar, kategoriler, yeni eklenenler ve son güncellenenler\n• Akıllı arama ve son aramalar\n• Fast Protect: her APK, SHA-256 özeti ve geliştirici imzası doğrulandıktan sonra kurulur\n• Arka planda otomatik güncelleme (kapalı, sadece Wi-Fi veya her zaman)\n• İndirme ilerlemesi bildirimde görünür\n• Kitaplık: yüklü uygulamalar ve kurulum geçmişi\n• Açık, koyu ve sistem teması",
+      "changelog": "Fast Store 2.0: tamamen yeni tasarım. Ana sayfa vitrini, kategoriler, arama, kitaplık, Fast Protect imza doğrulaması, izin listesi, otomatik güncelleme ve indirme bildirimleri.",
+      "versionCode": 3,
+      "versionName": "2.0",
+      "minSdk": 26,
+      "targetSdk": 34,
+      "size": 85113,
+      "sha256": "d03bbdeb0549670c9607f3f3c522686999b5b5257751766972bf689f0281d135",
+      "signer": "8e1cc11320594dfd6405a267500863a15624149fec7f383a1e60a70df21de6cf",
+      "permissions": [
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.QUERY_ALL_PACKAGES",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.REQUEST_DELETE_PACKAGES",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION"
+      ],
+      "added": "2026-11-01",
+      "updated": "2026-11-02",
+      "apkUrl": "FastStore-2.0.apk",
+      "tags": [
+        "mağaza",
+        "güncelleme",
+        "apk"
+      ],
+      "featured": true,
+      "website": "https://github.com/mertyesileducation/fast-store",
+      "iconUrl": "com.kisisel.magaza.png",
+      "bannerUrl": "com.kisisel.magaza.banner.png"
     },
     {
       "packageName": "com.mertyesil.egitim",
       "name": "MY Eğitim",
       "author": "Mert Yeşil",
       "category": "Eğitim",
-      "description": "Mert Yeşil Eğitim Portalı'nın resmi uygulaması.\n\n• Portal: mertyesil.com.tr uygulama içinde; üye girişi, dosya indirme/yükleme, favoriler ve çevrimdışı mod.\n• Pomodoro: ayarlanabilir odak ve mola süreleri. Kilit ekranında ve uygulama kapalıyken de çalışır. Bildirimden kontrol edilir, hızlı ayarlar kutucuğu vardır.\n• İstatistik: günlük hedef, seri, 7 günlük grafik ve konulara göre dağılım.\n• Ayarlar: açık/koyu tema, yazı boyutu, bildirim ve ses seçenekleri.",
+      "shortDescription": "Eğitim portalı, Pomodoro ve çalışma istatistikleri tek uygulamada.",
+      "description": "Mert Yeşil Eğitim Portalı'nın resmi uygulaması.\n\n• Portal: mertyesil.com.tr uygulama içinde; üye girişi, dosya indirme/yükleme, favoriler ve çevrimdışı mod\n• Pomodoro: ayarlanabilir odak ve mola süreleri; kilit ekranında ve uygulama kapalıyken de çalışır, bildirimden kontrol edilir, hızlı ayarlar kutucuğu vardır\n• İstatistik: günlük hedef, seri, 7 günlük grafik ve konulara göre dağılım\n• Ayarlar: açık/koyu tema, yazı boyutu, bildirim ve ses seçenekleri",
       "changelog": "İlk sürüm: Portal, Pomodoro, İstatistik ve Ayarlar.",
       "versionCode": 1,
       "versionName": "1.0",
+      "minSdk": 26,
+      "targetSdk": 34,
       "size": 98708,
       "sha256": "cb50504b9aab1675eb8feeac5102ec5dc85b9d087f0bacc6b33bd90bd166f7c2",
+      "signer": "8e1cc11320594dfd6405a267500863a15624149fec7f383a1e60a70df21de6cf",
+      "permissions": [
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.VIBRATE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "added": "2026-11-01",
+      "updated": "2026-11-01",
       "apkUrl": "MYEgitim-1.0.apk",
-      "iconUrl": "com.mertyesil.egitim.png"
+      "tags": [
+        "eğitim",
+        "pomodoro",
+        "ders",
+        "odaklanma"
+      ],
+      "featured": true,
+      "website": "https://mertyesil.com.tr",
+      "privacy": "https://mertyesil.com.tr/gizlilik.html",
+      "iconUrl": "com.mertyesil.egitim.png",
+      "bannerUrl": "com.mertyesil.egitim.banner.png"
     }
   ]
 }

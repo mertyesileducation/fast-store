@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Imzasiz APK paketleyici: sikistirilmamis girdileri 4 bayta hizalar
 (Android 11+ resources.arsc'nin sikistirilmamis ve hizali olmasini ister).
-Kullanim: package.py <cikis.apk> <res_klasoru> <classes.dex>
+Kullanim: package.py <cikis.apk> <derlenmis_kaynak_klasoru> <classes.dex>
 """
 import os
 import sys
@@ -13,8 +13,10 @@ entries = [
     ("AndroidManifest.xml", os.path.join(res_dir, "AndroidManifest.xml"), zipfile.ZIP_DEFLATED),
     ("classes.dex", dex, zipfile.ZIP_DEFLATED),
     ("resources.arsc", os.path.join(res_dir, "resources.arsc"), zipfile.ZIP_STORED),
-    ("res/drawable/ic_launcher.png", os.path.join(res_dir, "res/drawable/ic_launcher.png"), zipfile.ZIP_STORED),
 ]
+draw = os.path.join(res_dir, "res", "drawable")
+for fn in sorted(os.listdir(draw)):
+    entries.append(("res/drawable/" + fn, os.path.join(draw, fn), zipfile.ZIP_STORED))
 
 with zipfile.ZipFile(out, "w") as z:
     for name, path, method in entries:
