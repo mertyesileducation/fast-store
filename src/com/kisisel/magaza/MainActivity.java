@@ -81,7 +81,10 @@ public class MainActivity extends Activity implements CatalogRepo.Listener, Inst
         LinearLayout top = Ui.horizontal(this);
         top.setPadding(dp(16), dp(8), dp(6), dp(8));
         ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.ic_launcher);
+        try {
+            logo.setImageResource(R.drawable.ic_launcher);
+        } catch (Exception ignored) {
+        }
         top.addView(logo, Ui.lp(dp(34), dp(34)));
         headerTitle = Ui.text(this, "Fast Store", 20, Ui.text(), true);
         headerTitle.setPadding(dp(10), 0, 0, 0);

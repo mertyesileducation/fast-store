@@ -189,7 +189,7 @@ final class SearchTab extends Tab {
             row.addView(t, lp);
             i++;
         }
-        if (i % 2 == 1 && row != null) row.addView(new View(a), Ui.weight(1));
+        if (i % 2 == 1 && row != null) row.addView(new View(a), new LinearLayout.LayoutParams(0, 1, 1));
         results.addView(grid);
     }
 

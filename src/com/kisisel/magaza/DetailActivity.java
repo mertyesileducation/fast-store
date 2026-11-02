@@ -74,7 +74,7 @@ public class DetailActivity extends Activity implements InstallManager.Listener,
             @Override public void onClick(View v) { finish(); }
         });
         bar.addView(back, Ui.lp(dp(44), dp(44)));
-        bar.addView(new View(this), Ui.weight(1));
+        bar.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
         ImageButton share = Ui.iconButton(this, Icons.SHARE, Ui.text());
         share.setContentDescription("Paylaş");
         share.setOnClickListener(new View.OnClickListener() {
